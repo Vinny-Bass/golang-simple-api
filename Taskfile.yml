@@ -1,0 +1,45 @@
+version: '3'
+
+tasks:
+  build:
+    cmds:
+      - go build -o app cmd/server/main.go
+  
+  test:
+    cmds:
+      - go test -v ./...
+
+  lint:
+    cmds:
+      - golangci-lint run
+    
+  create-migration:
+    cmds:
+      - migrate create -ext sql -dir migrations/ -seq {{.CLI_ARGS}}
+
+  run:
+    cmds:
+      - docker-compose up --build
+
+  enter-in-bash:
+    cmds:
+      - docker exec -it {{.CLI_ARGS}} sh
+
+  integration-test:
+    cmds:
+      - docker-compose up -d db
+      # grc is for colorize our tests, https://stackoverflow.com/questions/27242652/colorizing-golang-test-run-output
+      - grc go test -tags=integration -v ./...
+    env:
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_DB: postgres
+      DB_HOST: localhost
+      DB_TABLE: postgres
+      DB_PORT: 5432
+      SSL_MODE: disable
+
+  e2e-test:
+    cmds:
+      - docker-compose up -d --build
+      - grc go test -tags=e2e -v ./...
